@@ -30,7 +30,33 @@ public class JWTService {
                 .claim("role", user.getRole().name())
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(getSigningKey(), SignatureAlgorithm.ES256)
+                .signWith(getSigningKey(), SignatureAlgorithm.HS256)
                 .compact();
+    }
+
+    private String getUsernameFromToken(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
+    }
+
+    private Date getTokenExpiration(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getSigningKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getExpiration();
+    }
+
+    private boolean isTokenExpired(String token) {
+        return getTokenExpiration(token).before(new Date());
+    }
+
+    public boolean isTokenValid(String token, User user) {
+        return getUsernameFromToken(token).equals(user.getUsername()) && !isTokenExpired(token);
     }
 }
